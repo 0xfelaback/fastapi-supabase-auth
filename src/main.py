@@ -4,7 +4,13 @@ from fastapi.responses import JSONResponse
 from supabase import create_client
 from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from src.models import SignUpRequest, LoginRequest, SignUpResponse, LoginResponse
+from src.models import (
+    SignUpRequest,
+    LoginRequest,
+    SignUpResponse,
+    LoginResponse,
+    UserProfileResponse,
+)
 import os
 
 load_dotenv()
@@ -113,6 +119,24 @@ def public_info():
     return {"message": "Welcome stranger! This info is public."}
 
 
-@app.get("/protected/profile")
+@app.get("/protected/profile", response_model=UserProfileResponse)
 def protected_profile(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    return {"message": "This is a protected route"}
+    try:
+        token = credentials.credentials
+        user_response = supabase.auth.get_user(token)
+        user_data = user_response.user  # type: ignore
+
+        return UserProfileResponse(
+            id=user_data.id,
+            email=user_data.email if user_data.email is not None else "",
+            email_confirmed_at=user_data.email_confirmed_at,  # type: ignore
+            created_at=user_data.created_at,  # type: ignore
+            updated_at=user_data.updated_at,  # type: ignore
+            last_sign_in_at=user_data.last_sign_in_at,  # type: ignore
+            phone=user_data.phone,
+            is_email_verified=user_data.email_confirmed_at is not None,
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+        )
