@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from supabase import create_client
 from fastapi import FastAPI, HTTPException, Request, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from supabase_auth import User
 from src.models import (
     SignUpRequest,
     LoginRequest,
@@ -26,6 +27,17 @@ supabase = create_client(
 app = FastAPI()
 
 security = HTTPBearer()
+
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    token = credentials.credentials
+    try:
+        user_response = supabase.auth.get_user(token)
+        return user_response.user  # type: ignore
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+        )
 
 
 @app.get("/")
@@ -120,23 +132,24 @@ def public_info():
 
 
 @app.get("/protected/profile", response_model=UserProfileResponse)
-def protected_profile(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    try:
-        token = credentials.credentials
-        user_response = supabase.auth.get_user(token)
-        user_data = user_response.user  # type: ignore
+def protected_profile(user: User = Depends(get_current_user)):
+    return UserProfileResponse(
+        id=user.id,
+        email=user.email if user.email is not None else "",
+        email_confirmed_at=user.email_confirmed_at,  # type: ignore
+        created_at=user.created_at,  # type: ignore
+        updated_at=user.updated_at,  # type: ignore
+        last_sign_in_at=user.last_sign_in_at,  # type: ignore
+        phone=user.phone,
+        is_email_verified=user.email_confirmed_at is not None,
+    )
 
-        return UserProfileResponse(
-            id=user_data.id,
-            email=user_data.email if user_data.email is not None else "",
-            email_confirmed_at=user_data.email_confirmed_at,  # type: ignore
-            created_at=user_data.created_at,  # type: ignore
-            updated_at=user_data.updated_at,  # type: ignore
-            last_sign_in_at=user_data.last_sign_in_at,  # type: ignore
-            phone=user_data.phone,
-            is_email_verified=user_data.email_confirmed_at is not None,
-        )
+
+@app.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(user: User = Depends(get_current_user)):
+    try:
+        supabase.auth.sign_out()
     except Exception:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+            status_code=status.HTTP_409_CONFLICT, detail="Logout failed"
         )
