@@ -13,6 +13,7 @@ from src.models import (
     UserProfileResponse,
 )
 import os
+from datetime import datetime
 
 load_dotenv()
 
@@ -27,6 +28,15 @@ supabase = create_client(
 app = FastAPI()
 
 security = HTTPBearer()
+
+
+def datetime_to_string(dt):  # type: ignore
+    """Convert datetime object to ISO format string, or return as-is if already string."""
+    if dt is None:
+        return None
+    if isinstance(dt, datetime):
+        return dt.isoformat()
+    return dt  # type: ignore
 
 
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
@@ -62,7 +72,10 @@ def signup(request: SignUpRequest):
 
     try:
         response = supabase.auth.sign_up(
-            {"email": request.email, "password": request.password}
+            {
+                "email": request.email,
+                "password": request.password,
+            }
         )
         user_data = response.user
         if user_data is None:
@@ -72,10 +85,14 @@ def signup(request: SignUpRequest):
         return SignUpResponse(
             id=user_data.id,
             email=user_data.email if user_data.email is not None else "",
-            email_confirmed_at=user_data.email_confirmed_at,  # type: ignore
-            created_at=user_data.created_at if user_data.created_at is not None else "",  # type: ignore
-            updated_at=user_data.updated_at,  # type: ignore
-            last_sign_in_at=user_data.last_sign_in_at,  # type: ignore
+            email_confirmed_at=datetime_to_string(user_data.email_confirmed_at),
+            created_at=(
+                datetime_to_string(user_data.created_at)
+                if user_data.created_at is not None  # type: ignore
+                else ""
+            ),  # pyright: ignore[reportArgumentType]
+            updated_at=datetime_to_string(user_data.updated_at),
+            last_sign_in_at=datetime_to_string(user_data.last_sign_in_at),
             phone=user_data.phone,
             is_email_verified=user_data.email_confirmed_at is not None,
         )
@@ -98,10 +115,10 @@ def login(request: LoginRequest):
         user_response = SignUpResponse(
             id=user_data.id,
             email=user_data.email if user_data.email is not None else "",
-            email_confirmed_at=user_data.email_confirmed_at,  # type: ignore
-            created_at=user_data.created_at,  # type: ignore
-            updated_at=user_data.updated_at,  # type: ignore
-            last_sign_in_at=user_data.last_sign_in_at,  # type: ignore
+            email_confirmed_at=datetime_to_string(user_data.email_confirmed_at),
+            created_at=datetime_to_string(user_data.created_at),  # type: ignore
+            updated_at=datetime_to_string(user_data.updated_at),
+            last_sign_in_at=datetime_to_string(user_data.last_sign_in_at),
             phone=user_data.phone,
             is_email_verified=user_data.email_confirmed_at is not None,
         )
@@ -136,10 +153,10 @@ def protected_profile(user: User = Depends(get_current_user)):
     return UserProfileResponse(
         id=user.id,
         email=user.email if user.email is not None else "",
-        email_confirmed_at=user.email_confirmed_at,  # type: ignore
-        created_at=user.created_at,  # type: ignore
-        updated_at=user.updated_at,  # type: ignore
-        last_sign_in_at=user.last_sign_in_at,  # type: ignore
+        email_confirmed_at=datetime_to_string(user.email_confirmed_at),
+        created_at=datetime_to_string(user.created_at),  # type: ignore
+        updated_at=datetime_to_string(user.updated_at),
+        last_sign_in_at=datetime_to_string(user.last_sign_in_at),
         phone=user.phone,
         is_email_verified=user.email_confirmed_at is not None,
     )

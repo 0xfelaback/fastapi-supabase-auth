@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Union
+from datetime import datetime
 
 
 class SignUpRequest(BaseModel):
@@ -15,10 +16,10 @@ class LoginRequest(BaseModel):
 class SignUpResponse(BaseModel):
     id: str
     email: str
-    email_confirmed_at: Optional[str] = None
-    created_at: str
-    updated_at: Optional[str] = None
-    last_sign_in_at: Optional[str] = None
+    email_confirmed_at: Optional[Union[str, datetime]] = None
+    created_at: Union[str, datetime]
+    updated_at: Optional[Union[str, datetime]] = None
+    last_sign_in_at: Optional[Union[str, datetime]] = None
     phone: Optional[str] = None
     is_email_verified: bool = False
 
@@ -34,9 +35,9 @@ class LoginResponse(BaseModel):
 class UserProfileResponse(BaseModel):
     id: str
     email: str
-    email_confirmed_at: Optional[str] = None
-    created_at: str
-    updated_at: Optional[str] = None
-    last_sign_in_at: Optional[str] = None
+    email_confirmed_at: Optional[Union[str, datetime]] = None
+    created_at: Union[str, datetime]
+    updated_at: Optional[Union[str, datetime]] = None
+    last_sign_in_at: Optional[Union[str, datetime]] = None
     phone: Optional[str] = None
     is_email_verified: bool = False
