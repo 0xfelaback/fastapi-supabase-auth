@@ -1,0 +1,14 @@
+[project]
+name = "fastapi-supabase-auth"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "Daniel Onuchukwu", email = "114066984+0xfelaback@users.noreply.github.com" },
+]
+requires-python = ">=3.12"
+dependencies = ["fastapi[standard] (>=0.141.1,<0.142.0)", "supabase (>=2.31.0,<3.0.0)", "python-dotenv (>=1.2.3,<2.0.0)"]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
